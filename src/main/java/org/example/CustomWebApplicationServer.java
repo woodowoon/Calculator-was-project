@@ -6,10 +6,13 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class CustomWebApplicationServer {
     private final int port;
+
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10); // Thread Pool
 
     private static final Logger logger = LoggerFactory.getLogger(CustomWebApplicationServer.class);
 
@@ -37,7 +40,7 @@ public class CustomWebApplicationServer {
                  *          -> Thread Pool 개념을 활용해야한다. Thread 를 일정 개수 만큼 생성해두고 이를 재활용 해야한다.
                  *              Thread Pool 를 이용하여 안정적인 서비스가 가능하도록 해야한다.
                  */
-                new Thread(new ClientRequestHandler(clientSocket)).start();
+                executorService.execute(new ClientRequestHandler(clientSocket)); // Thread Pool 사용
             }
         }
     }
