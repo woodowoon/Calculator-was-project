@@ -31,6 +31,7 @@ public class CustomWebApplicationServer {
 
                 /**
                  * Step1 - 사용자 요청을 메인 Thread가 처리하도록 한다.
+                 * Step2 - 사용자 요청이 들어올 때마다 Thread를 새로 생성해서 사용자의 요청을 처리한다.
                  */
 
                 try (InputStream in = clientSocket.getInputStream(); OutputStream out = clientSocket.getOutputStream()) {
