@@ -1,7 +1,5 @@
 package org.example;
 
-import org.example.calculator.domain.Calculator;
-import org.example.calculator.domain.PositiveNumber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,32 +28,16 @@ public class CustomWebApplicationServer {
                 logger.info("[CustomWebApplicationServer] client connected!");
 
                 /**
-                 * Step1 - 사용자 요청을 메인 Thread가 처리하도록 한다.
-                 * Step2 - 사용자 요청이 들어올 때마다 Thread를 새로 생성해서 사용자의 요청을 처리한다.
+                 * Step2 - 사용자 요청이 들어올 때마다 Thread를 새로 생성해서 사용자 요청을 처리하도록 한다.
+                 *      이렇게 했을때 다른 이슈가 있을 수 있다.
+                 *      Thread는 생성될때마다 독립적인 메모리를 할당받고 그럴때마다 메모리를 할당받게 되면 성능이 매우 떨어지게 된다.
+                 *      요청이 몰리게되면 Thread를 굉장히 많이 생성하게 되고 메모리 할당 작업이 많이 발생하게 된다.\
+                 *      동시접속자가 많을 경우 CPU와 메모리 사용량을 감당할 수 없을 것이다.
+                 *      서버의 리소스가 감당할 수 없어서 다운될 수 있다.
+                 *          -> Thread Pool 개념을 활용해야한다. Thread 를 일정 개수 만큼 생성해두고 이를 재활용 해야한다.
+                 *              Thread Pool 를 이용하여 안정적인 서비스가 가능하도록 해야한다.
                  */
-
-                try (InputStream in = clientSocket.getInputStream(); OutputStream out = clientSocket.getOutputStream()) {
-                    BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-                    DataOutputStream dos = new DataOutputStream(out);
-
-                    HttpRequest httpRequest = new HttpRequest(br);
-
-                    // GET /calculate?operand1=11&operatoe=*&operand2=55 HTTP/1.1
-                    if (httpRequest.isGetRequest() && httpRequest.matchPath("/calculate")) {
-                        QueryStrings queryStrings = httpRequest.getQueryString();
-
-                        int operand1 = Integer.parseInt(queryStrings.getValue("operand1"));
-                        String operator = queryStrings.getValue("operator");
-                        int operand2 = Integer.parseInt(queryStrings.getValue("operand2"));
-
-                        int result = Calculator.calculate(new PositiveNumber(operand1), operator, new PositiveNumber(operand2));
-                        byte[] body = String.valueOf(result).getBytes();
-
-                        HttpResponse response = new HttpResponse(dos);
-                        response.response200Header("application/json", body.length);
-                        response.responseBody(body);
-                    }
-                }
+                new Thread(new ClientRequestHandler(clientSocket)).start();
             }
         }
     }
